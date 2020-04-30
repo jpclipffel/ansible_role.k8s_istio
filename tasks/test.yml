@@ -1,0 +1,17 @@
+- name: Deploy test resources
+  k8s:
+    state: present
+    force: yes
+    apply: yes
+    definition: "{{ lookup('template', 'test-hellogo.yml') }}"
+  tags:
+    - apply
+
+
+- name: Remove test resources
+  k8s:
+    state: absent
+    definition: "{{ lookup('template', 'test-hellogo.yml') }}"
+  ignore_errors: yes
+  tags:
+    - delete

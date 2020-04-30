@@ -1,0 +1,76 @@
+# Version
+k8s_istio_version: "1.4.3"
+k8s_istio_version_major: "{{ k8s_istio_version.split('.')[0] }}"
+k8s_istio_version_minor: "{{ k8s_istio_version.split('.')[1] }}"
+k8s_istio_version_canonical: "{{ k8s_istio_version_major }}.{{ k8s_istio_version_minor }}"
+
+# Package name and URL.
+k8s_istio_package_name: "istio-{{ k8s_istio_version }}-linux.tar.gz"
+k8s_istio_package_url: "https://github.com/istio/istio/releases/download/{{ k8s_istio_version }}/{{ k8s_istio_package_name }}"
+
+# Install locations
+k8s_istio_install_dir: "/usr/share/istio"
+k8s_istio_root: "{{ k8s_istio_install_dir }}/istio-{{ k8s_istio_version }}"
+k8s_istio_bin: "{{ k8s_istio_root }}/bin/istioctl"
+
+# Deployment configuration
+k8s_istio_profile: "default"
+k8s_istio_parameters_default: []
+k8s_istio_parameters_extra: []
+
+# Namespaces watched by Istio to inject its sidecar
+k8s_istio_sidecar_namespaces: [ "default" ]
+
+# Gateway TLS certificate and key
+k8s_istio_tls_crt: ""
+k8s_istio_tls_key: ""
+
+# Ingress gateway
+k8s_istio_ingressgw_custom: yes
+k8s_istio_ingressgw_ports: {}
+k8s_istio_ingressgw_default_ports:
+  # DNS
+  - containerPort: 53
+    hostPort: 53
+    protocol: UDP
+  # Status port (healthz)
+  - containerPort: 15020
+    hostPort: 15020
+    protocol: TCP
+  # Kiali UI
+  - containerPort: 15029
+    hostPort: 15029
+    protocol: TCP
+  # Prometheus UI
+  - containerPort: 15030
+    hostPort: 15030
+    protocol: TCP
+  # Grafana UI
+  - containerPort: 15031
+    hostPort: 15031
+    protocol: TCP
+  # Tracing UI
+  - containerPort: 15032
+    hostPort: 15032
+    protocol: TCP
+  # Ingress & Egress - SNI
+  - containerPort: 15443
+    hostPort: 15443
+    protocol: TCP
+  # Istiod - TLS (legacy)
+  - containerPort: 15011
+    hostPort: 15011
+    protocol: TCP
+  # Citadel - GPRC server
+  - containerPort: 8060
+    hostPort: 8060
+    protocol: TCP
+  # Unknown
+  - containerPort: 853
+    hostPort: 853
+    protocol: TCP
+  # Envoy - Prometheus telemetry
+  - containerPort: 15090
+    hostPort: 15090
+    name: http-envoy-prom
+    protocol: TCP

@@ -1,0 +1,127 @@
+- name: Assertions
+  assert:
+    that:
+      - k8s_primary_master_name is defined
+      - k8s_node_type is defined
+  tags:
+    - apply
+    - delete
+
+
+- name: Check Istio installation status
+  stat:
+    path: "{{ k8s_istio_bin }}"
+  register: _k8s_istio_bin
+  when:
+    - k8s_node_type == "master"
+  tags:
+    - apply
+    - delete
+
+
+- name: Check deployed Istio version
+  shell:
+    kubectl get -n istio-system service/istio-pilot -o jsonpath='{.metadata.labels.operator\.istio\.io\/version}'
+  register:
+    _k8s_istio_version_deployed
+  failed_when:
+    - _k8s_istio_version_deployed.rc !=0 and not "NotFound" in _k8s_istio_version_deployed.stderr
+  when:
+    - k8s_node_type == "master"
+  tags:
+    - apply
+    - delete
+
+
+- block:
+    - name: Create Istio resources backup file
+      tempfile:
+        state: file
+      register: _k8s_istio_resources
+    # ---
+    - name: Backup custom Istio resources
+      shell:
+        kubectl get -A vs,gateway -o yaml --field-selector=metadata.name!=ingressgateway > {{ _k8s_istio_resources.path }}
+    # ---
+    - name: Remove current Istio deployment
+      include_tasks:
+        file: delete.yml
+        apply: { tags: [ delete ] }
+      vars:
+        k8s_istio_root: "{{ k8s_istio_install_dir }}/istio-{{ _k8s_istio_version_deployed.stdout }}"
+        k8s_istio_bin: "{{ k8s_istio_root }}/bin/istioctl"
+  when:
+    - inventory_hostname == k8s_primary_master_name
+    - _k8s_istio_version_deployed.rc == 0
+    - _k8s_istio_version_deployed.stdout != k8s_istio_version
+  tags:
+    - apply
+
+
+- name: Handle Istio deployment
+  include_tasks:
+    file: apply.yml
+    apply: { tags: [ apply ] }
+  tags:
+    - apply
+
+
+- name: Handle custom ingress gateway
+  include_tasks:
+    file: ingressgw.yml
+  when:
+    - inventory_hostname == k8s_primary_master_name
+    - k8s_istio_ingressgw_custom is true
+  tags:
+    - apply
+    - delete
+
+
+- name: Handle test resources
+  include_tasks:
+    file: test.yml
+  when:
+    - inventory_hostname == k8s_primary_master_name
+    - k8s_istio_ingressgw_custom is true
+  tags:
+    - istio-test
+
+
+- name: Restore Istio custom resources
+  shell:
+    kubectl apply -f {{ _k8s_istio_resources.path }}
+  when:
+    - inventory_hostname == k8s_primary_master_name
+    - _k8s_istio_version_deployed.rc == 0
+    - _k8s_istio_version_deployed.stdout != k8s_istio_version
+  tags:
+    - apply
+
+
+- name: Rollout restart deployments
+  shell:
+    kubectl rollout restart deployments
+  when:
+    - inventory_hostname == k8s_primary_master_name
+    - _k8s_istio_version_deployed.rc == 0
+    - _k8s_istio_version_deployed.stdout != k8s_istio_version
+  tags:
+    - apply
+
+
+- name: Handle Istio removal
+  include_tasks:
+    file: delete.yml
+    apply: { tags: [ delete ] }
+  tags:
+    - delete
+
+
+- name: Uninstall Istio
+  file:
+    path: "{{ k8s_istio_install_dir }}"
+    state: absent
+  when:
+    - k8s_node_type == "master"
+  tags:
+    - remove

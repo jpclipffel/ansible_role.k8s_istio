@@ -1,0 +1,28 @@
+- name: Disable Istio sidecar injection
+  shell: >
+    kubectl label namespace {{ item }} istio-injection-
+  with_items: "{{ k8s_istio_sidecar_namespaces }}"
+  changed_when: false
+  ignore_errors: yes
+  when:
+    - inventory_hostname == k8s_primary_master_name
+
+
+- name: Delete Istio
+  shell: >
+    {{ k8s_istio_bin }} manifest generate --set profile={{ k8s_istio_profile }} | kubectl delete --ignore-not-found=true -f -
+  register: _delete_istio
+  failed_when:
+    - _delete_istio.rc != 0 and not "NotFound" in _delete_istio.stderr and not "no matches for kind" in _delete_istio.stderr
+  when:
+    - inventory_hostname == k8s_primary_master_name
+
+
+- name: Delete Istio TLS secret
+  shell: >
+    kubectl delete -n istio-system secret istio-ingressgateway-certs
+  register: _delete_secret
+  failed_when:
+    - _delete_secret.rc != 0 and not "not found" in _delete_secret.stderr
+  when:
+    - inventory_hostname == k8s_primary_master_name

@@ -1,0 +1,59 @@
+- name: Create Istio install location
+  file:
+    path: "{{ k8s_istio_install_dir }}"
+    state: directory
+  when:
+    - k8s_node_type == "master"
+
+
+- name: Install Istio
+  unarchive:
+    src: "{{ k8s_istio_package_url }}"
+    dest: "{{ k8s_istio_install_dir }}"
+    remote_src: yes
+  when:
+    - k8s_node_type == "master"
+    - not _k8s_istio_bin.stat.exists
+
+
+- name: Apply Istio
+  shell: >
+    {{ k8s_istio_bin }} manifest apply --set profile={{ k8s_istio_profile }}
+    {% if k8s_istio_parameters_default | length > 0 %} --set {{ k8s_istio_parameters_default | join(' --set ') }} {% endif %} 
+    {% if k8s_istio_parameters_extra | length > 0 %} --set {{ k8s_istio_parameters_extra | join(' --set ') }} {% endif %} 
+  when:
+    - inventory_hostname == k8s_primary_master_name
+
+
+- name: Create sidecar-injected namespaces
+  shell: >
+    kubectl create namespace {{ item }}
+  with_items: "{{ k8s_istio_sidecar_namespaces }}"
+  register: _create_ns
+  failed_when:
+    - _create_ns.rc != 0 and not "AlreadyExists" in _create_ns.stderr
+  when:
+    - inventory_hostname == k8s_primary_master_name
+
+
+- name: Enable Istio sidecar injection
+  shell: >
+    kubectl label namespace {{ item }} istio-injection=enabled --overwrite=true
+  with_items: "{{ k8s_istio_sidecar_namespaces }}"
+  register: _label_ns
+  failed_when:
+    - _label_ns.rc != 0 and not "NotFound" in _label_ns
+  when:
+    - inventory_hostname == k8s_primary_master_name
+
+
+- name: Create Istio TLS secret
+  shell: >
+    kubectl create -n istio-system secret tls istio-ingressgateway-certs --key {{ k8s_istio_tls_key }} --cert {{ k8s_istio_tls_crt }}
+  register: _create_secret
+  failed_when:
+    - _create_secret.rc != 0 and not "not found" in _create_secret.stderr and not "already exists" in _create_secret.stderr
+  when:
+    - inventory_hostname == k8s_primary_master_name
+    - k8s_istio_tls_crt | default('') | length > 1
+    - k8s_istio_tls_key | default('') | length > 1

@@ -1,0 +1,95 @@
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: hellogo-gw
+  namespace: default
+spec:
+  selector:
+    app: istio-ingressgateway
+  servers:
+  # HTTPS
+  - port:
+      number: 443
+      name: https
+      protocol: HTTPS
+    tls:
+      mode: SIMPLE
+      serverCertificate: /etc/istio/ingressgateway-certs/tls.crt
+      privateKey: /etc/istio/ingressgateway-certs/tls.key
+    hosts:
+    - "*"
+  # HTTP
+  - port:
+      number: 80
+      name: http2
+      protocol: HTTP
+    tls:
+      httpsRedirect: false
+    hosts:
+    - "*"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hellogo-deployment
+  namespace: default
+spec:
+  replicas: 1
+  # Pods selector
+  selector:
+    matchLabels:
+      app: hellogo
+  # Pods template
+  template:
+    metadata:
+      labels:
+        app: hellogo
+    spec:
+      containers:
+      - name: hellogo-istio
+        image: gcr.io/google-samples/node-hello:1.0
+      ports:
+      - containerPort: 8080
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  # Service hostname
+  name: hellogo-svc
+  namespace: default
+spec:
+  # Pods selector
+  selector:
+    app: hellogo
+  # Service ports
+  ports:
+  - port: 80
+    targetPort: 8080
+    # Protocol and name required for Istio < 1.5 (https://discuss.istio.io/t/upstream-connect-error-or-disconnect-reset-before-headers-reset-reason-connection-termination/4434/10)
+    protocol: TCP
+    name: http-query
+
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: hellogo-vs
+  namespace: default
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - hellogo-gw
+  http:
+  - match:
+    - uri:
+        prefix: "/hellogo"
+    route:
+    - destination:
+        # Service selector
+        host: hellogo-svc
+        port:
+          number: 80
