@@ -41,6 +41,37 @@ Role variables are prefixed with `k8s_istio_`.
 |`k8s_istio_ingressgw_custom`|`bool`|No|`yes`|Uses a custom `IngressGateway` manifest|
 |`k8s_istio_ingressgw_ports`|`string`|No|`no`|Custom `IngressGateway` ports|
 
+### Ingress gateway configuration
+
+Istio's ingress gateway inbound ports are configured by Ansible. Two set of ports are injected in the configuration:
+
+* `k8s_istio_ingressgw_default_ports`: Defaults inbound port (DNS, status, Prometheus, etc.)
+* `k8s_istio_ingressgw_ports`: Custom ports
+
+Custom ports are defined with the same syntax as Istio manifest:
+
+```yaml
+k8s_istio_ingressgw_ports:
+  # HTTP
+  - containerPort: 80
+    hostPort: 80
+    protocol: TCP
+    name: http2
+  # HTTPS
+  - containerPort: 443
+    hostPort: 443
+    protocol: TCP
+    name: https
+  # ...
+```
+
+| Variable        | Type               | Required | Default         | Description                                     |
+|-----------------|--------------------|----------|-----------------|-------------------------------------------------|
+| `containerPort` | `int`, port number | Yes      |                 | Target port in the mesh                         |
+| `hostPort`      | `int`, port number | No       | `containerPort` | Port on the host OS                             |
+| `protocol`      | `string`           | No       | `TCP`           | Port protocol (must be recognized by Istio)     |
+| `name`          | `string`           | No       |                 | Port name (highly recomended by still optional) |
+
 ## Templates
 
 |Template|Description|
