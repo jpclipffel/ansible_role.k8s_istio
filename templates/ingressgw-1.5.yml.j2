@@ -122,7 +122,7 @@ spec:
         imagePullPolicy: IfNotPresent
         name: istio-proxy
         ports:
-        {% for port in k8s_istio_ingressgw_ports | union(k8s_istio_ingressgw_ports) %}
+        {% for port in k8s_istio_ingressgw_ports | union(k8s_istio_ingressgw_default_ports) %}
 
         - containerPort: {{ port.containerPort }}
           hostPort: {{ port.hostPort | default(port.containerPort) }}
