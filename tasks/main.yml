@@ -99,8 +99,9 @@
 
 
 - name: Rollout restart deployments
-  shell:
-    kubectl rollout restart deployments
+  shell: >
+    kubectl rollout restart deployments -n {{ item }}
+  with_items: "{{ k8s_istio_sidecar_namespaces }}"
   when:
     - inventory_hostname == k8s_primary_master_name
     - _k8s_istio_version_deployed.rc == 0
@@ -108,7 +109,7 @@
   tags:
     - apply
 
-
+    
 - name: Handle Istio removal
   include_tasks:
     file: delete.yml
