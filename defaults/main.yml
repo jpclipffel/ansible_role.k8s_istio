@@ -26,7 +26,7 @@ k8s_istio_tls_crt: ""
 k8s_istio_tls_key: ""
 
 # Ingress gateway
-k8s_istio_ingressgw_custom: no
+k8s_istio_ingressgw_custom: ''
 k8s_istio_ingressgw_ports: {}
 k8s_istio_ingressgw_default_ports:
   # DNS
@@ -74,3 +74,6 @@ k8s_istio_ingressgw_default_ports:
     hostPort: 15090
     name: http-envoy-prom
     protocol: TCP
+
+# Custom Istio manifest to apply or delete automatically.
+k8s_istio_custom_manifests: []

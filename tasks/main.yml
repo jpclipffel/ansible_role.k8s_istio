@@ -4,6 +4,7 @@
       - k8s_primary_master_name is defined
       - k8s_node_type is defined
   tags:
+    - never
     - apply
     - delete
 
@@ -15,6 +16,7 @@
   when:
     - k8s_node_type == "master"
   tags:
+    - never
     - apply
     - delete
 
@@ -22,24 +24,24 @@
 - name: Check deployed Istio version
   shell:
     kubectl get -n istio-system service/istio-pilot -o jsonpath='{.metadata.labels.operator\.istio\.io\/version}'
-  register:
-    _k8s_istio_version_deployed
+  register: _k8s_istio_version_deployed
   failed_when:
     - _k8s_istio_version_deployed.rc !=0 and not "NotFound" in _k8s_istio_version_deployed.stderr
   when:
     - k8s_node_type == "master"
   tags:
+    - never
     - apply
     - delete
 
 
 - block:
-    - name: Create Istio resources backup file
+    - name: Create Istio active resources backup file
       tempfile:
         state: file
       register: _k8s_istio_resources
     # ---
-    - name: Backup custom Istio resources
+    - name: Backup active Istio resources
       shell:
         kubectl get -A vs,gateway -o yaml --field-selector=metadata.name!=ingressgateway > {{ _k8s_istio_resources.path }}
     # ---
@@ -55,6 +57,7 @@
     - _k8s_istio_version_deployed.rc == 0
     - _k8s_istio_version_deployed.stdout != k8s_istio_version
   tags:
+    - never
     - apply
 
 
@@ -63,31 +66,35 @@
     file: apply.yml
     apply: { tags: [ apply ] }
   tags:
+    - never
     - apply
 
 
-- name: Handle custom ingress gateway
+- name: Handle custom IngressGateway
   include_tasks:
     file: ingressgw.yml
   when:
     - inventory_hostname == k8s_primary_master_name
-    - k8s_istio_ingressgw_custom is true
+    - k8s_istio_ingressgw_custom | length > 0
   tags:
+    - never
     - apply
     - delete
 
 
-- name: Handle test resources
-  include_tasks:
-    file: test.yml
+- name: Apply custom manifests
+  k8s:
+    state: present
+    definition: "{{ lookup('template', 'custom/' + item + '.yml.j2') }}"
+  with_items: "{{ k8s_istio_custom_manifests }}"
   when:
     - inventory_hostname == k8s_primary_master_name
-    - k8s_istio_ingressgw_custom is true
   tags:
-    - istio-test
+    - never
+    - apply
 
 
-- name: Restore Istio custom resources
+- name: Restore Istio active resources
   shell:
     kubectl apply -f {{ _k8s_istio_resources.path }}
   when:
@@ -95,6 +102,7 @@
     - _k8s_istio_version_deployed.rc == 0
     - _k8s_istio_version_deployed.stdout != k8s_istio_version
   tags:
+    - never
     - apply
 
 
@@ -107,14 +115,28 @@
     - _k8s_istio_version_deployed.rc == 0
     - _k8s_istio_version_deployed.stdout != k8s_istio_version
   tags:
+    - never
     - apply
 
-    
+
+- name: Delete custom manifests
+  k8s:
+    state: absent
+    definition: "{{ lookup('template', 'custom/' + item + '.yml.j2') }}"
+  with_items: "{{ k8s_istio_custom_manifests }}"
+  when:
+    - inventory_hostname == k8s_primary_master_name
+  tags:
+    - never
+    - delete
+
+
 - name: Handle Istio removal
   include_tasks:
     file: delete.yml
     apply: { tags: [ delete ] }
   tags:
+    - never
     - delete
 
 
@@ -125,4 +147,5 @@
   when:
     - k8s_node_type == "master"
   tags:
+    - never
     - remove

@@ -1,48 +1,69 @@
-- name: Create temporary manifest file
-  tempfile:
-    state: file
-  register: _manifest
-  tags:
-    - apply
-    - delete
+# - name: Create temporary manifest file
+#   tempfile:
+#     state: file
+#   register: _manifest
+#   tags:
+#     - apply
+#     - delete
 
 
-- name: Template Istio Ingress Gateway
-  template:
-    src: "ingressgw-{{ k8s_istio_version_canonical }}.yml.j2"
-    dest: "{{ _manifest.path }}"
-  tags:
-    - apply
-    - delete
+# - name: Template Istio Ingress Gateway
+#   template:
+#     src: "ingressgw-{{ k8s_istio_version_canonical }}.yml.j2"
+#     dest: "{{ _manifest.path }}"
+#   tags:
+#     - apply
+#     - delete
 
 
 - name: Delete default Istio Ingress Gateway
   shell:
     kubectl delete --ignore-not-found=true -n istio-system deployment,svc istio-ingressgateway
   tags:
+    - never
     - apply
 
 
-- name: Apply Istio Ingress Gateway
+- name: Apply custom Istio IngressGateway
   k8s:
     state: present
-    src: "{{ _manifest.path }}"
+    # definition: "{{ lookup('template', 'ingressgw-' + k8s_istio_version_canonical + '.yml.j2' }}"
+    definition: "{{ lookup('template', k8s_istio_ingressgw_custom + '-' + k8s_istio_version_canonical + '.yml.j2') }}"
   tags:
+    - never
     - apply
 
 
-- name: Delete Istio Ingress Gateway
+- name: Delete custom Istio IngressGateway
   k8s:
     state: absent
-    src: "{{ _manifest.path }}"
+    # definition: "{{ lookup('template', 'ingressgw-' + k8s_istio_version_canonical + '.yml.j2' }}"
+    definition: "{{ lookup('template', k8s_istio_ingressgw_custom + '-' + k8s_istio_version_canonical + '.yml.j2') }}"
   tags:
+    - never
     - delete
 
 
-- name: Cleanup temporary files
-  file:
-    path: "{{ _manifest.path }}"
-    state: absent
-  tags:
-    - apply
-    - delete
+# - name: Apply Istio Ingress Gateway
+#   k8s:
+#     state: present
+#     src: "{{ _manifest.path }}"
+#   tags:
+#     - apply
+
+
+# - name: Delete Istio Ingress Gateway
+#   k8s:
+#     state: absent
+#     src: "{{ _manifest.path }}"
+#   tags:
+#     - delete
+
+
+# - name: Cleanup temporary files
+#   file:
+#     path: "{{ _manifest.path }}"
+#     state: absent
+#   tags:
+#     - apply
+#     - delete
