@@ -1,4 +1,4 @@
-apiVersion: networking.istio.io/v1beta1
+apiVersion: networking.istio.io/{{ k8s_istio_custom_gateway_apiVersion | default('v1') }}
 kind: Gateway
 metadata:
  name: {{ k8s_istio_custom_gateway_name | default("istio-gateway") }}
