@@ -1,47 +1,36 @@
-# IaC / Ansible / Roles / K8S Istio
+# Ansible role - `k8s_istio`
 
-Install Istio on Kubernetes clusters.
+Deploy and manage Istio on Kubernetes clusters.
 
-## Usage
+This role aims to manage the whole lifecycle of an Istio deployment:
 
-Include the role in your playbook using the `include_role` module (do not specify the `file` attribute):
-
-```yaml
-include_role:
-  name: k8s_istio
-```
-
-Do not forget to set the common `k8s_` variables:
-
-* `k8s_primary_master_name`
-* `k8s_node_type`
+* Installation and deployment
+* Resources customization (e.g. `IngressGateway` ports)
+* Custom resources deployment (e.g. generic `Gateway`)
+* Upgrade (downgrade not yet fully supported)
 
 ## Tags
 
-|Tag      |Description|
-|---------|-----------|
-|`apply`  |Install or upgrade Istio|
-|`delete` |Uninstall Istio|
+| Tag      | Description                                      |
+|----------|--------------------------------------------------|
+| `apply`  | Install, deploy, upgrade and (re)configure Istio |
+| `delete` | Uninstall Istio and remove its resources         |
 
 ## Variables
 
-Role variables are prefixed with `k8s_istio_`.
+| Variable                       | Type     | Required | Defaut              | Description                                                   |
+|--------------------------------|----------|----------|---------------------|---------------------------------------------------------------|
+| `k8s_istio_version`            | `string` | No       | `1.4.3`             | Istio version (`major.minor.patch`)                           |
+| `k8s_istio_profile`            | `string` | No       | `default`           | Istio profile name                                            |
+| `k8s_istio_parameters_extra`   | `list`   | No       | `[]` (empty list)   | Istio parameters (passed to `istioctl` with `--set`)          |
+| `k8s_istio_sidecar_namespaces` | `string` | No       | `[default]`         | Namespaces watched by Istio to inject its sidecar             |
+| `k8s_istio_tls_crt`            | `string` | No       | `""` (empty string) | Istio `IngressGateway` TLS certificate                        |
+| `k8s_istio_tls_key`            | `string` | No       | `""` (empty string) | Istio `IngressGateway` TLS provate key                        |
+| `k8s_istio_ingressgw_custom`   | `bool`   | No       | `yes`               | Uses a custom `IngressGateway` manifest                       |
+| `k8s_istio_ingressgw_ports`    | `string` | No       | `no`                | Custom `IngressGateway` ports                                 |
+| `k8s_istio_custom_manifests`   | `list`   | No       | `[]` (empty list)   | Custom manifests to deploy (located in role's `templates/`)   |
 
-|Variable|Type|Required|Defaut|Description|
-|--------|----|--------|------|-----------|
-|`k8s_primary_master_name`|`string`|Yes|-|K8S cluster primary master name (as set in Ansible inventory)|
-|`k8s_node_type`|`string`|Yes|-|Host role in K8S cluster (`master` or `worker`)|
-||||||
-|`k8s_istio_version`|`string`|No|`1.4.3`|Istio version (`major.minor.patch`)|
-|`k8s_istio_profile`|`string`|No|`default`|Istio profile name|
-|`k8s_istio_parameters_extra`|`list`|No|`[]` (empty list)|Istio parameters (passed to `istioctl` with `--set`)|
-|`k8s_istio_sidecar_namespaces`|`string`|No|`[default]`|Namespaces watched by Istio to inject its sidecar|
-|`k8s_istio_tls_crt`|`string`|No|`""` (empty string)|Istio `IngressGateway` TLS certificate|
-|`k8s_istio_tls_key`|`string`|No|`""` (empty string)|Istio `IngressGateway` TLS provate key|
-|`k8s_istio_ingressgw_custom`|`bool`|No|`yes`|Uses a custom `IngressGateway` manifest|
-|`k8s_istio_ingressgw_ports`|`string`|No|`no`|Custom `IngressGateway` ports|
-
-### Ingress gateway configuration
+## Ingress gateway configuration
 
 Istio's ingress gateway inbound ports are configured by Ansible. Two set of ports are injected in the configuration:
 
@@ -72,11 +61,40 @@ k8s_istio_ingressgw_ports:
 | `protocol`      | `string`           | No       | `TCP`           | Port protocol (must be recognized by Istio)     |
 | `name`          | `string`           | No       |                 | Port name (highly recomended by still optional) |
 
-## Templates
+## Generic gateway
 
-|Template|Description|
-|--------|-----------|
-|`ingressgw-*.yml.j2`|Custom Istio's `IngressGateway` (king changed to `DaemonSet` with templated ports)|
+You can deploy a generic istio `Gateway` using this role.
+
+* This `Gateway` is SSL-aware
+* This `Gateway` is deployed in `istio-system` namespace; You can refeer to it using `istio-system/istio-gateway` (see example bellow)
+
+Example usage in an Istio's `VirtualService`:
+
+```yaml
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: test-vs
+  namespace: default
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - "istio-system/istio-gateway"
+  http:
+  - route:
+    - destination:
+        host: test-svc
+        port:
+          number: 80
+```
+
+## Templates and custom manifests
+
+| Template                | Description                                                                          |
+|-------------------------|--------------------------------------------------------------------------------------|
+| `ingressgw-*.yml.j2`    | Custom Istio's `IngressGateway` (`kind` changed to `DaemonSet` with templated ports) |
+| `custom/gateway.yml.j2` | Generic and SSL-aware `Gateway`                                                      |
 
 ## Tasks sequence
 
