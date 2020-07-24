@@ -16,11 +16,30 @@
     - not _k8s_istio_bin.stat.exists
 
 
+- name: Create Istio deployment values file
+  tempfile:
+    state: file
+  register: _istio_values
+  when:
+    - inventory_hostname == k8s_primary_master_name
+    - k8s_istio_ingressgw_custom | length == 0
+
+
+- name: Template Istio deployment values file
+  template:
+    src: "values.yml.j2"
+    dest: "{{ _istio_values.path }}"
+  when:
+    - inventory_hostname == k8s_primary_master_name
+    - k8s_istio_ingressgw_custom | length == 0
+
+
 - name: Apply Istio
   shell: >
     {{ k8s_istio_bin }} manifest apply --set profile={{ k8s_istio_profile }}
     {% if k8s_istio_parameters_default | length > 0 %} --set {{ k8s_istio_parameters_default | join(' --set ') }} {% endif %} 
     {% if k8s_istio_parameters_extra | length > 0 %} --set {{ k8s_istio_parameters_extra | join(' --set ') }} {% endif %} 
+    {% if _istio_values.path is defined %} -f "{{ _istio_values.path }}" {% endif %}
   when:
     - inventory_hostname == k8s_primary_master_name
 
