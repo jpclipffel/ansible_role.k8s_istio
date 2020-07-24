@@ -124,9 +124,9 @@ spec:
         ports:
         {% for port in k8s_istio_ingressgw_ports | union(k8s_istio_ingressgw_default_ports) %}
 
-        - containerPort: {{ port.containerPort }}
-          hostPort: {{ port.hostPort | default(port.containerPort) }}
-          protocol: {{ port.protocol | default("TCP") }}
+        - containerPort: {{ port.containerPort | default(port.port) }}
+          hostPort: {{ port.hostPort | default(port.containerPort) | default(port.port) }}
+          protocol: {{ port.protocol | default("tcp") }}
           {% if port.name is defined %}name: {{ port.name }}{% endif %}
         {% endfor %}
 
