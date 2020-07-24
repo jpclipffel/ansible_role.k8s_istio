@@ -1,0 +1,16 @@
+apiVersion: install.istio.io/v1alpha1
+kind: IstioOperator
+spec:
+  components:
+    ingressGateways:
+      - name: istio-ingressgateway
+        enabled: true
+        k8s:
+          service:
+            ports:
+            {% for port in k8s_istio_ingressgw_ports | union(k8s_istio_ingressgw_default_ports) %}
+
+            - port: {{ port.port }}
+              targetPort: {{ port.targetPort | default(port.port) }}
+              name: "{{ port.name | default("tcp-" + port.port | string) }}"
+            {% endfor %}
