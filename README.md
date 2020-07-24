@@ -37,29 +37,34 @@ Istio's ingress gateway inbound ports are configured by Ansible. Two set of port
 * `k8s_istio_ingressgw_default_ports`: Defaults inbound port (DNS, status, Prometheus, etc.)
 * `k8s_istio_ingressgw_ports`: Custom ports
 
-Custom ports are defined with the same syntax as Istio manifest:
+It is strongly advised to provide only the `port` and `name` fields, which are generic and compatible with all deployment type:
 
 ```yaml
-k8s_istio_ingressgw_ports:
-  # HTTP
-  - containerPort: 80
-    hostPort: 80
-    protocol: TCP
-    name: http2
-  # HTTPS
-  - containerPort: 443
-    hostPort: 443
-    protocol: TCP
-    name: https
-  # ...
+ports:
+- port: <int>           # Required; Port number
+  name: <str>           # Optional; Port protocol and name; Syntax is <protocol>-<suffix>; Defaults to 'tcp-<port>'
 ```
 
-| Variable        | Type               | Required | Default         | Description                                     |
-|-----------------|--------------------|----------|-----------------|-------------------------------------------------|
-| `containerPort` | `int`, port number | Yes      |                 | Target port in the mesh                         |
-| `hostPort`      | `int`, port number | No       | `containerPort` | Port on the host OS                             |
-| `protocol`      | `string`           | No       | `TCP`           | Port protocol (must be recognized by Istio)     |
-| `name`          | `string`           | No       |                 | Port name (highly recomended by still optional) |
+When deploying default Istio (i.e. without custom ingress gateway template), each `port` item should provide the following values:
+
+```yaml
+ports:
+- port: <int>           # Required; Port number
+  targetPort: <int>     # Optional; Target port number; Defaults to <port>.
+  name: <str>           # Optional; Port protocol and name; Syntax is <protocol>-<suffix>; Defaults to 'tcp-<port>'
+                        # More info: https://istio.io/latest/docs/ops/configuration/traffic-management/protocol-selection/
+```
+
+When deploying Istio with a custom ingress gateway template, each `port` item should provide the following values:
+
+```yaml
+ports:
+- port: <int>           # Optional; Port number
+  containerPort: <int>  # Optional; Container port number; Defaults to <port>
+  hostPort: <int>       # Optional; Host port number; Defaults to <port>
+  protocol: <str>       # Optional; Protocol name; Defaults to 'tcp'
+  name: <str>           # Optional; Port name; No defaults
+```
 
 ## Generic gateway
 
@@ -93,6 +98,7 @@ spec:
 
 | Template                | Description                                                                          |
 |-------------------------|--------------------------------------------------------------------------------------|
+| `values.yml.j2`         | Default Istio's `IngressGateway` ports customization                                 |
 | `ingressgw-*.yml.j2`    | Custom Istio's `IngressGateway` (`kind` changed to `DaemonSet` with templated ports) |
 | `custom/gateway.yml.j2` | Generic and SSL-aware `Gateway`                                                      |
 
