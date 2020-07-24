@@ -17,6 +17,32 @@ spec:
     protocol: TCP
     name: http-query
 
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hellogo-dpl
+  namespace: default
+spec:
+  replicas: 1
+  # Pods selector
+  selector:
+    matchLabels:
+      app: hellogo
+  # Pods template
+  template:
+    metadata:
+      labels:
+        app: hellogo
+    spec:
+      containers:
+      - name: hellogo-istio
+        image: gcr.io/google-samples/node-hello:1.0
+      ports:
+      - containerPort: 8080
+
+
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
