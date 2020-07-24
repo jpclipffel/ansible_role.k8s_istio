@@ -87,6 +87,7 @@
     state: present
     definition: "{{ lookup('template', 'custom/' + item + '.yml.j2') }}"
   with_items: "{{ k8s_istio_custom_manifests }}"
+  ignore_errors: yes
   when:
     - inventory_hostname == k8s_primary_master_name
   tags:
@@ -124,6 +125,7 @@
     state: absent
     definition: "{{ lookup('template', 'custom/' + item + '.yml.j2') }}"
   with_items: "{{ k8s_istio_custom_manifests }}"
+  ignore_errors: yes
   when:
     - inventory_hostname == k8s_primary_master_name
   tags:
