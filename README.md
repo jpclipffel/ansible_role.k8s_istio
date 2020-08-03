@@ -18,17 +18,18 @@ This role aims to manage the whole lifecycle of an Istio deployment:
 
 ## Variables
 
-| Variable                       | Type     | Required | Defaut              | Description                                                   |
-|--------------------------------|----------|----------|---------------------|---------------------------------------------------------------|
-| `k8s_istio_version`            | `string` | No       | `1.4.3`             | Istio version (`major.minor.patch`)                           |
-| `k8s_istio_profile`            | `string` | No       | `default`           | Istio profile name                                            |
-| `k8s_istio_parameters_extra`   | `list`   | No       | `[]` (empty list)   | Istio parameters (passed to `istioctl` with `--set`)          |
-| `k8s_istio_sidecar_namespaces` | `string` | No       | `[default]`         | Namespaces watched by Istio to inject its sidecar             |
-| `k8s_istio_tls_crt`            | `string` | No       | `""` (empty string) | Istio `IngressGateway` TLS certificate                        |
-| `k8s_istio_tls_key`            | `string` | No       | `""` (empty string) | Istio `IngressGateway` TLS provate key                        |
-| `k8s_istio_ingressgw_custom`   | `bool`   | No       | `yes`               | Uses a custom `IngressGateway` manifest                       |
-| `k8s_istio_ingressgw_ports`    | `string` | No       | `no`                | Custom `IngressGateway` ports                                 |
-| `k8s_istio_custom_manifests`   | `list`   | No       | `[]` (empty list)   | Custom manifests to deploy (located in role's `templates/`)   |
+| Variable                          | Type     | Required | Defaut              | Description                                                  |
+|-----------------------------------|----------|----------|---------------------|--------------------------------------------------------------|
+| `k8s_istio_version`               | `string` | No       | `1.4.3`             | Istio version (`major.minor.patch`)                          |
+| `k8s_istio_profile`               | `string` | No       | `default`           | Istio profile name                                           |
+| `k8s_istio_parameters_extra`      | `list`   | No       | `[]` (empty list)   | Istio parameters (passed to `istioctl` with `--set`)         |
+| `k8s_istio_sidecar_namespaces`    | `string` | No       | `[default]`         | Namespaces watched by Istio to inject its sidecar            |
+| `k8s_istio_tls_crt`               | `string` | No       | `""` (empty string) | Istio `IngressGateway` TLS certificate                       |
+| `k8s_istio_tls_key`               | `string` | No       | `""` (empty string) | Istio `IngressGateway` TLS provate key                       |
+| `k8s_istio_ingressgw_annotations` | `dict`   | No       | `{}` (empty dict)   | Istio `IngressGateway` annotations (e.g. for `MetalLB` pool) |
+| `k8s_istio_ingressgw_custom`      | `bool`   | No       | `yes`               | Uses a custom `IngressGateway` manifest                      |
+| `k8s_istio_ingressgw_ports`       | `string` | No       | `no`                | Custom `IngressGateway` ports                                |
+| `k8s_istio_custom_manifests`      | `list`   | No       | `[]` (empty list)   | Custom manifests to deploy (located in role's `templates/`)  |
 
 ## Ingress gateway configuration
 
@@ -98,7 +99,7 @@ spec:
 
 | Template                | Description                                                                          |
 |-------------------------|--------------------------------------------------------------------------------------|
-| `values.yml.j2`         | Default Istio's `IngressGateway` ports customization                                 |
+| `values.yml.j2`         | Default Istio's `IngressGateway` customization                                       |
 | `ingressgw-*.yml.j2`    | Custom Istio's `IngressGateway` (`kind` changed to `DaemonSet` with templated ports) |
 | `custom/gateway.yml.j2` | Generic and SSL-aware `Gateway`                                                      |
 

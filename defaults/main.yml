@@ -28,6 +28,10 @@ k8s_istio_tls_key: ""
 # Ingress gateway template name
 k8s_istio_ingressgw_custom: ''
 
+# Ingress gateway labels
+k8s_istio_ingressgw_annotations:
+  test: ok
+
 # Ingress gateway custom and defaults ports defnition
 #
 # When possible, it is advised to provide only the <port> and <name> fields, which are
@@ -57,74 +61,95 @@ k8s_istio_ingressgw_custom: ''
 #   protocol: <str>       # Optional; Protocol name; Defaults to 'tcp'
 #   name: <str>           # Optional; Port name; No defaults
 #
-k8s_istio_ingressgw_ports: {}
+k8s_istio_ingressgw_ports: []
 k8s_istio_ingressgw_default_ports:
-  # DNS
-  - name: udp-dns
-    port: 53
-    containerPort: 53
-    hostPort: 53
-    protocol: UDP
   # Status port (healthz)
-  - name: http-healtz
+  - name: status-port
     port: 15020
+    targetPort: 15020
     containerPort: 15020
     hostPort: 15020
     protocol: TCP
+  # HTTP
+  - name: http2
+    port: 80
+    targetPort: 80
+    containerPort: 80
+    hostPort: 80
+    protocol: TCP
+  # HTTPS
+  - name: https
+    port: 443
+    targetPort: 443
+    containerPort: 443
+    hostPort: 443
+    protocol: TCP
   # Kiali UI
-  # - name: http-kiali
-  #   port: 15029
-  #   containerPort: 15029
-  #   hostPort: 15029
-  #   protocol: TCP
+  - name: http-kiali
+    port: 15029
+    targetPort: 15029
+    containerPort: 15029
+    hostPort: 15029
+    protocol: TCP
   # Prometheus UI
-  # - name: http-prometheus
-  #   port: 15030
-  #   containerPort: 15030
-  #   hostPort: 15030
-  #   protocol: TCP
+  - name: prometheus
+    port: 15030
+    targetPort: 15030
+    containerPort: 15030
+    hostPort: 15030
+    protocol: TCP
   # Grafana UI
-  # - name: http-grafana
-  #   port: 15031
-  #   containerPort: 15031
-  #   hostPort: 15031
-  #   protocol: TCP
+  - name: grafana
+    port: 15031
+    targetPort: 15031
+    containerPort: 15031
+    hostPort: 15031
+    protocol: TCP
   # Tracing UI
-  # - name: http-tracing
-  #   port: 15032
-  #   containerPort: 15032
-  #   hostPort: 15032
-  #   protocol: TCP
+  - name: tracing
+    port: 15032
+    targetPort: 15032
+    containerPort: 15032
+    hostPort: 15032
+    protocol: TCP
   # Ingress & Egress - SNI
-  - name: tcp-sni
+  - name: tls
     port: 15443
+    targetPort: 15443
     containerPort: 15443
     hostPort: 15443
     protocol: TCP
+  # TCP
+  - name: tcp
+    port: 31400
+    targetPort: 31400
+    containerPort: 31400
+    hostPort: 31400
+    protocol: TCP
   # Istiod - TLS (legacy)
-  - name: tcp-tls
-    port: 15011
-    containerPort: 15011
-    hostPort: 15011
-    protocol: TCP
+  # - name: tcp-tls
+  #   port: 15011
+  #   containerPort: 15011
+  #   hostPort: 15011
+  #   protocol: TCP
   # Citadel - GPRC server
-  - name: grpc-citadel
-    port: 8060
-    containerPort: 8060
-    hostPort: 8060
-    protocol: TCP
+  # - name: grpc-citadel
+  #   port: 8060
+  #   containerPort: 8060
+  #   hostPort: 8060
+  #   protocol: TCP
   # Unknown
-  - name: tcp-853
-    port: 853
-    containerPort: 853
-    hostPort: 853
-    protocol: TCP
+  # - name: tcp-853
+  #   port: 853
+  #   containerPort: 853
+  #   hostPort: 853
+  #   protocol: TCP
   # Envoy - Prometheus telemetry
-  - name: http-envoy-prom
-    port: 15090
-    containerPort: 15090
-    hostPort: 15090
-    protocol: TCP
+  # - name: http-envoy-prom
+  #   port: 15090
+  #   containerPort: 15090
+  #   hostPort: 15090
+  #   protocol: TCP
 
 # Custom Istio manifest to apply or delete automatically.
 k8s_istio_custom_manifests: []
