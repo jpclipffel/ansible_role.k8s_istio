@@ -18,7 +18,7 @@ This role aims to manage the whole lifecycle of an Istio deployment:
 
 ## Variables
 
-| Variable                          | Type     | Required | Defaut              | Description                                                  |
+| Variable                          | Type     | Required | Default             | Description                                                  |
 |-----------------------------------|----------|----------|---------------------|--------------------------------------------------------------|
 | `k8s_istio_version`               | `string` | No       | `1.4.3`             | Istio version (`major.minor.patch`)                          |
 | `k8s_istio_profile`               | `string` | No       | `default`           | Istio profile name                                           |
@@ -69,7 +69,11 @@ ports:
 
 ## Generic gateway
 
-You can deploy a generic istio `Gateway` using this role.
+You can deploy a generic istio `Gateway` using this role by adding `gateway` to `k8s_istio_custom_manifests`:
+
+```yaml
+k8s_istio_custom_manifests: [ "gateway" ]
+```
 
 * This `Gateway` is SSL-aware
 * This `Gateway` is deployed in `istio-system` namespace; You can refeer to it using `istio-system/istio-gateway` (see example bellow)
