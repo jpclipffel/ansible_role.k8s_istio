@@ -3,10 +3,7 @@
     that:
       - k8s_primary_master_name is defined
       - k8s_node_type is defined
-  tags:
-    - never
-    - apply
-    - delete
+  tags: [never, apply, delete]
 
 
 - name: Check Istio installation status
@@ -15,10 +12,7 @@
   register: _k8s_istio_bin
   when:
     - k8s_node_type == "master"
-  tags:
-    - never
-    - apply
-    - delete
+  tags: [never, apply, delete]
 
 
 - name: Check deployed Istio version
@@ -29,45 +23,52 @@
     - _k8s_istio_version_deployed.rc !=0 and not "NotFound" in _k8s_istio_version_deployed.stderr
   when:
     - k8s_node_type == "master"
-  tags:
-    - never
-    - apply
-    - delete
+  tags: [never, apply, delete]
 
 
-- block:
-    - name: Create Istio active resources backup file
-      tempfile:
-        state: file
-      register: _k8s_istio_resources
-    # ---
-    - name: Backup active Istio resources
-      shell:
-        kubectl get -A vs,gateway -o yaml --field-selector=metadata.name!=ingressgateway > {{ _k8s_istio_resources.path }}
-    # ---
-    - name: Remove current Istio deployment
-      include_tasks:
-        file: delete.yml
-        apply: { tags: [ delete ] }
-      vars:
-        k8s_istio_root: "{{ k8s_istio_install_dir }}/istio-{{ _k8s_istio_version_deployed.stdout }}"
-        k8s_istio_bin: "{{ k8s_istio_root }}/bin/istioctl"
+- name: Create Istio custom resources backup file
+  tempfile:
+    state: file
+  register: _k8s_istio_resources
+  when:
+    - inventory_hostname == k8s_primary_master_name
+  tags: [never, apply, delete]
+
+
+- name: Backup Istio custom resources
+  shell: |
+    kubectl get -A vs,gateway -o yaml --field-selector=metadata.name!=ingressgateway > {{ _k8s_istio_resources.path }}
+  when:
+    - inventory_hostname == k8s_primary_master_name
+  tags: [never, apply, delete]
+
+
+- debug:
+    msg: "Istio custom resources saved on {{ inventory_hostname }} at {{ _k8s_istio_resources.path }}"
+  when:
+    - inventory_hostname == k8s_primary_master_name
+  tags: [never, apply, delete]
+
+
+- name: Remove current Istio deployment
+  include_tasks:
+    file: delete.yml
+    apply: { tags: [ delete ] }
+  vars:
+    k8s_istio_root: "{{ k8s_istio_install_dir }}/istio-{{ _k8s_istio_version_deployed.stdout }}"
+    k8s_istio_bin: "{{ k8s_istio_root }}/bin/istioctl"
   when:
     - inventory_hostname == k8s_primary_master_name
     - _k8s_istio_version_deployed.rc == 0
     - _k8s_istio_version_deployed.stdout != k8s_istio_version
-  tags:
-    - never
-    - apply
+  tags: [never, apply]
 
 
 - name: Handle Istio deployment
   include_tasks:
     file: apply.yml
     apply: { tags: [ apply ] }
-  tags:
-    - never
-    - apply
+  tags: [never, apply]
 
 
 - name: Handle custom IngressGateway
@@ -76,10 +77,7 @@
   when:
     - inventory_hostname == k8s_primary_master_name
     - k8s_istio_ingressgw_custom | length > 0
-  tags:
-    - never
-    - apply
-    - delete
+  tags: [never, apply, delete]
 
 
 - name: Apply custom manifests
@@ -90,9 +88,7 @@
   ignore_errors: yes
   when:
     - inventory_hostname == k8s_primary_master_name
-  tags:
-    - never
-    - apply
+  tags: [never, apply]
 
 
 - name: Restore Istio active resources
@@ -102,9 +98,7 @@
     - inventory_hostname == k8s_primary_master_name
     - _k8s_istio_version_deployed.rc == 0
     - _k8s_istio_version_deployed.stdout != k8s_istio_version
-  tags:
-    - never
-    - apply
+  tags: [never, apply]
 
 
 - name: Rollout restart deployments
@@ -115,9 +109,7 @@
     - inventory_hostname == k8s_primary_master_name
     - _k8s_istio_version_deployed.rc == 0
     - _k8s_istio_version_deployed.stdout != k8s_istio_version
-  tags:
-    - never
-    - apply
+  tags: [never, apply]
 
 
 - name: Delete custom manifests
@@ -128,18 +120,14 @@
   ignore_errors: yes
   when:
     - inventory_hostname == k8s_primary_master_name
-  tags:
-    - never
-    - delete
+  tags: [never, apply]
 
 
 - name: Handle Istio removal
   include_tasks:
     file: delete.yml
     apply: { tags: [ delete ] }
-  tags:
-    - never
-    - delete
+  tags: [never, delete]
 
 
 - name: Uninstall Istio
@@ -148,6 +136,4 @@
     state: absent
   when:
     - k8s_node_type == "master"
-  tags:
-    - never
-    - remove
+  tags: [never, remove]
