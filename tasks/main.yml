@@ -40,6 +40,9 @@
     kubectl get -A vs,gateway -o yaml --field-selector=metadata.name!=ingressgateway > {{ _k8s_istio_resources.path }}
   when:
     - inventory_hostname == k8s_primary_master_name
+  register: _k8s_istio_backup_resource
+  failed_when:
+    - _k8s_istio_backup_resource.rc != 0 and not "the server doesn't have a resource type" in _k8s_istio_backup_resource.stderr
   tags: [never, apply, delete]
 
 
