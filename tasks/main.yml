@@ -123,7 +123,7 @@
   ignore_errors: yes
   when:
     - inventory_hostname == k8s_primary_master_name
-  tags: [never, apply]
+  tags: [never, delete]
 
 
 - name: Handle Istio removal
