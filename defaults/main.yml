@@ -5,7 +5,7 @@ k8s_istio_version_minor: "{{ k8s_istio_version.split('.')[1] }}"
 k8s_istio_version_canonical: "{{ k8s_istio_version_major }}.{{ k8s_istio_version_minor }}"
 
 # Package name and URL.
-k8s_istio_package_name: "istio-{{ k8s_istio_version }}-linux.tar.gz"
+k8s_istio_package_name: "istio-{{ k8s_istio_version }}-linux-amd64.tar.gz"
 k8s_istio_package_url: "https://github.com/istio/istio/releases/download/{{ k8s_istio_version }}/{{ k8s_istio_package_name }}"
 
 # Install locations

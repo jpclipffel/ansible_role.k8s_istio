@@ -1,3 +1,5 @@
+# code: language=Ansible insertSpaces=true tabSize=2
+
 - name: Delete default Istio Ingress Gateway
   shell:
     kubectl delete --ignore-not-found=true -n istio-system deployment,svc istio-ingressgateway

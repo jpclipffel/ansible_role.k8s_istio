@@ -1,3 +1,5 @@
+# code: language=Ansible insertSpaces=true tabSize=2
+
 - name: Create Istio install location
   file:
     path: "{{ k8s_istio_install_dir }}"
